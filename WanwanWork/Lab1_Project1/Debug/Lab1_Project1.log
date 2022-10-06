@@ -1,0 +1,5 @@
+﻿  Lab1_source.cpp
+E:\vmware\Sharefile\Labs-Web-Tech\WanwanWork\Lab1_Project1\Lab1_source.cpp(62,15): warning C4101: “a”: 未引用的局部变量
+E:\vmware\Sharefile\Labs-Web-Tech\WanwanWork\Lab1_Project1\Lab1_source.cpp(71,15): warning C4101: “Packet_Header”: 未引用的局部变量
+E:\vmware\Sharefile\Labs-Web-Tech\WanwanWork\Lab1_Project1\Lab1_source.cpp(72,16): warning C4101: “Packet_Data”: 未引用的局部变量
+  Lab1_Project1.vcxproj -> E:\vmware\Sharefile\Labs-Web-Tech\WanwanWork\Lab1_Project1\Debug\Lab1_Project1.exe
