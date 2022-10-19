@@ -1,4 +1,4 @@
-#include"pcap.h"
+ï»¿#include"pcap.h"
 #include<iostream>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WinSock2.h>
@@ -9,99 +9,96 @@ using namespace std;
 #pragma comment(lib,"ws2_32.lib")
 
 #pragma pack (1)
-//½øÈë×Ö ½Ú¶ÔÆë·½Ê½
+//è¿›å…¥å­— èŠ‚å¯¹é½æ–¹å¼
 typedef struct FrameHeader_t{
-	BYTE DesMAC[6];
-	// Ä¿µÄµØÖ·
-	BYTE SrcMAC[6];
-	//Ô´µØÖ·
-	WORD FrameType;
-	//Ö¡ÀàĞÍ
+	BYTE DesMAC[6];// ç›®çš„åœ°å€
+	BYTE SrcMAC[6];//æºåœ°å€
+	WORD FrameType;//å¸§ç±»å‹
 }FrameHeader_t;
 typedef struct IPHeader_t{
-	//IPÊ×²¿
-	BYTE Ver_HLen;
-	BYTE TOS;
-	WORD TotalLen;
+	//IPé¦–éƒ¨
+	BYTE Ver_HLen;//IPåè®®ç‰ˆæœ¬å’ŒIPé¦–éƒ¨é•¿åº¦ã€‚é«˜4ä½ä¸ºç‰ˆæœ¬ï¼Œä½4ä½ä¸ºé¦–éƒ¨çš„é•¿åº¦(å•ä½ä¸º4bytes)
+	BYTE TOS;//æœåŠ¡ç±»å‹
+	WORD TotalLen;//IPåŒ…æ€»é•¿åº¦
 	WORD ID;
 	WORD Flag_Segment;
-	BYTE TTL;
-	BYTE Protocol;
-	WORD Checksum;
-	ULONG SrcIP;
-	ULONG DstIP;
+	BYTE TTL;//ä¸€ä¸ªç½‘ç»œå±‚çš„ç½‘ç»œæ•°æ®åŒ…(package)çš„ç”Ÿå­˜å‘¨æœŸ
+	BYTE Protocol;//åè®®
+	WORD Checksum;//æ ¡éªŒå’Œ
+	ULONG SrcIP;//æºåœ°å€
+	ULONG DstIP;//ç›®æ ‡åœ°å€
 } IPHeader_t;
 typedef struct Data_t {
-	//°üº¬Ö¡Ê×²¿ºÍIPÊ×²¿µÄÊı¾İ°ü
+	//åŒ…å«å¸§é¦–éƒ¨å’ŒIPé¦–éƒ¨çš„æ•°æ®åŒ…
 	FrameHeader_t FrameHeader;
 	IPHeader_t IPHeader;
 } Data_t;
-#pragma pack() //»Ö¸´È±Ê¡¶ÔÆë·½Ê½
+#pragma pack() //æ¢å¤ç¼ºçœå¯¹é½æ–¹å¼
 
 void PrintEtherHeader(const u_char* packetData)
 {
 	
-	struct FrameHeader_t* protocol;
-	protocol = (struct FrameHeader_t*)packetData;
+	struct FrameHeader_t* data;
+	data = (struct FrameHeader_t*)packetData;
+	//å°†ä¸€ä¸ª16ä½æ•°ç”±ç½‘ç»œå­—èŠ‚é¡ºåºè½¬æ¢ä¸ºä¸»æœºå­—èŠ‚é¡ºåº
+	u_short ether_type = ntohs(data->FrameType);  // ä»¥å¤ªç½‘ç±»å‹
+	u_char* ether_src = data->SrcMAC;         // ä»¥å¤ªç½‘åŸå§‹MACåœ°å€
+	u_char* ether_dst = data->DesMAC;         // ä»¥å¤ªç½‘ç›®æ ‡MACåœ°å€
 
-	u_short ether_type = ntohs(protocol->FrameType);  // ÒÔÌ«ÍøÀàĞÍ
-	u_char* ether_src = protocol->SrcMAC;         // ÒÔÌ«ÍøÔ­Ê¼MACµØÖ·
-	u_char* ether_dst = protocol->DesMAC;         // ÒÔÌ«ÍøÄ¿±êMACµØÖ·
-
-	printf("ÀàĞÍ: 0x%x \t", ether_type);
-	printf("Ô­MACµØÖ·: %02X:%02X:%02X:%02X:%02X:%02X \t",
+	printf("ç±»å‹: 0x%x \t", ether_type);
+	printf("åŸMACåœ°å€: %02X:%02X:%02X:%02X:%02X:%02X \t",
 		ether_src[0], ether_src[1], ether_src[2], ether_src[3], ether_src[4], ether_src[5]);
-	printf("Ä¿±êMACµØÖ·: %02X:%02X:%02X:%02X:%02X:%02X \n",
+	printf("ç›®æ ‡MACåœ°å€: %02X:%02X:%02X:%02X:%02X:%02X \n",
 		ether_dst[0], ether_dst[1], ether_dst[2], ether_dst[3], ether_dst[4], ether_dst[5]);
 }
-void PrintIPHeader(const u_char* packetData) {
-	struct IPHeader_t* ip_protocol;
-
-	// +14 Ìø¹ıÊı¾İÁ´Â·²ã
-	ip_protocol = (struct IPHeader_t*)(packetData + 14);
-	SOCKADDR_IN Src_Addr, Dst_Addr = { 0 };
-
-	u_short check_sum = ntohs(ip_protocol->Checksum);
-	int ttl = ip_protocol->TTL;
-	int proto = ip_protocol->Protocol;
-
-	Src_Addr.sin_addr.s_addr = ip_protocol->SrcIP;
-	Dst_Addr.sin_addr.s_addr = ip_protocol->DstIP;
-
-	//printf("Ô´µØÖ·: %15s --> ", inet_ntoa(Src_Addr.sin_addr));
-	//printf("Ä¿±êµØÖ·: %15s --> ", inet_ntoa(Dst_Addr.sin_addr));
-	char buff1[17];
-	::inet_ntop(AF_INET, (const void*)&Src_Addr.sin_addr, buff1, 17);
-	printf("Ô´µØÖ·: %s --> ", buff1);
-	char buff2[17];
-	::inet_ntop(AF_INET, (const void*)&Dst_Addr.sin_addr, buff2, 17);
-	printf("Ä¿±êµØÖ·: %s --> ", buff2);
-	printf("Ğ£ÑéºÍ: %5X --> TTL: %4d --> Ğ­ÒéÀàĞÍ: ", check_sum, ttl);
-	switch (ip_protocol->Protocol)
-	{
-	case 1: printf("ICMP \n"); break;
-	case 2: printf("IGMP \n"); break;
-	case 6: printf("TCP \n");  break;
-	case 17: printf("UDP \n"); break;
-	case 89: printf("OSPF \n"); break;
-	default: printf("None \n"); break;
-	}
-}
+//void PrintIPHeader(const u_char* packetData) {
+//	struct IPHeader_t* ip_protocol;
+//
+//	// +14 è·³è¿‡æ•°æ®é“¾è·¯å±‚
+//	ip_protocol = (struct IPHeader_t*)(packetData + 14);
+//	SOCKADDR_IN Src_Addr, Dst_Addr = { 0 };
+//
+//	u_short check_sum = ntohs(ip_protocol->Checksum);
+//	int ttl = ip_protocol->TTL;
+//	int proto = ip_protocol->Protocol;
+//
+//	Src_Addr.sin_addr.s_addr = ip_protocol->SrcIP;
+//	Dst_Addr.sin_addr.s_addr = ip_protocol->DstIP;
+//
+//	//printf("æºåœ°å€: %15s --> ", inet_ntoa(Src_Addr.sin_addr));
+//	//printf("ç›®æ ‡åœ°å€: %15s --> ", inet_ntoa(Dst_Addr.sin_addr));
+//	char buff1[17];
+//	::inet_ntop(AF_INET, (const void*)&Src_Addr.sin_addr, buff1, 17);
+//	printf("æºåœ°å€: %s --> ", buff1);
+//	char buff2[17];
+//	::inet_ntop(AF_INET, (const void*)&Dst_Addr.sin_addr, buff2, 17);
+//	printf("ç›®æ ‡åœ°å€: %s --> ", buff2);
+//	printf("æ ¡éªŒå’Œ: %5X --> TTL: %4d --> åè®®ç±»å‹: ", check_sum, ttl);
+//	switch (ip_protocol->Protocol)
+//	{
+//	case 1: printf("ICMP \n"); break;
+//	case 2: printf("IGMP \n"); break;
+//	case 6: printf("TCP \n");  break;
+//	case 17: printf("UDP \n"); break;
+//	case 89: printf("OSPF \n"); break;
+//	default: printf("None \n"); break;
+//	}
+//}
 
 
 int main() {
-	//½Ó¿ÚÁ´±íÊı¾İ½á¹¹
+	//æ¥å£é“¾è¡¨æ•°æ®ç»“æ„
 	pcap_if_t* alldevs;
 	pcap_if_t* d;
 	pcap_if_t* d1;
 	pcap_addr_t* a;
 	char errbuf[PCAP_ERRBUF_SIZE];
-	//»ñÈ¡Éè±¸ÁĞ±í
+	//è·å–è®¾å¤‡åˆ—è¡¨
 	if (pcap_findalldevs_ex(PCAP_SRC_IF_STRING, NULL, &alldevs, errbuf) !=-1) {
-		cout << "»ñÈ¡Éè±¸ÁĞ±í³É¹¦" << endl;
+		cout << "è·å–è®¾å¤‡åˆ—è¡¨æˆåŠŸ" << endl;
 	}
-	else { cout << "»ñÈ¡Éè±¸ÁĞ±íÊ§°Ü" << endl; return 0; }
-	//ÏÔÊ¾»ñÈ¡µÄÉè±¸ÁĞ±í
+	else { cout << "è·å–è®¾å¤‡åˆ—è¡¨å¤±è´¥" << endl; return 0; }
+	//æ˜¾ç¤ºè·å–çš„è®¾å¤‡åˆ—è¡¨
 	int i1 = 1;
 	for (d1 = alldevs; d1 != NULL; d1 = d1->next) {
 		cout <<  i1 ; i1++;
@@ -109,62 +106,45 @@ int main() {
 		//cout << "description: " << d1->description << endl;
 		//cout << "addresses: " << d1->addresses << endl;
 	}
-	//Ñ¡ÔñÒª¼àÌıµÄÍø¿¨
-	cout << "ÇëÑ¡ÔñÒª¼àÌıµÄÍø¿¨£º";
-	int cho_i;
-	cin >> cho_i;
+	//é€‰æ‹©è¦ç›‘å¬çš„ç½‘å¡
+	//cout << "è¯·é€‰æ‹©è¦ç›‘å¬çš„ç½‘å¡ï¼š";
+	//int cho_i;
+	//cin >> cho_i;
 
 	int i = 1;
-	pcap_pkthdr* Packet_Header;    // Êı¾İ°üÍ·
+	pcap_pkthdr* Packet_Header;    // æ•°æ®åŒ…å¤´
 	const u_char* Packet_Data;
 	for (d = alldevs; d != NULL; d = d->next) {
 		
 		//cout << "next_ex: " << pcap_next_ex(d, &Packet_Header, &Packet_Data) << endl;
 		pcap_if_t* pname = d;
-		//´ò¿ªÍøÂç½Ó¿Ú
-		pcap_t* handle = pcap_open(pname->name, 655340,  PCAP_OPENFLAG_PROMISCUOUS,1000, 0, 0);
+		//æ‰“å¼€ç½‘ç»œæ¥å£
+		pcap_t* handle = pcap_open(pname->name, 655340,  PCAP_OPENFLAG_PROMISCUOUS,2000, 0, 0);
 		
-		
-		pcap_pkthdr* Packet_Header=NULL;    // Êı¾İ°üÍ·
-		const u_char* Packet_Data=NULL;    // Êı¾İ±¾Éí
-		int retValue;
-		cout << endl << i << endl; i++;
-		if (i == cho_i) {
-			cout << "¿ªÊ¼¼àÌı£º "<<i<<"  :";
-			while (1) {
-				if ((retValue = pcap_next_ex(handle, &Packet_Header, &Packet_Data)) >= 0)
-				{
-					if (retValue == 0) { continue; }
-					cout << "name: " << d->name << endl;
-					cout << "description: " << d->description << endl;
-					cout << "addresses: " << d->addresses << endl;
+		//ä¸åˆå§‹åŒ–ä¼šæŠ¥é”™
+		pcap_pkthdr* Packet_Header=NULL;    // æ•°æ®åŒ…å¤´
+		const u_char* Packet_Data=NULL;    // æ•°æ®æœ¬èº«
+		int ex_value;
 
-					printf("ÕìÌı³¤¶È: %d \n", Packet_Header->len);
-					//cout<<Packet_Data<<endl;
-					PrintEtherHeader(Packet_Data);
-					PrintIPHeader(Packet_Data);
-				}
-				else { cout << "³¬Ê±" << endl; }
+		cout << i << " :"; i++;
+		int k = 0;
+		while (k >= 0) {
+			//pcap_open æ•°æ®åŒ…åŸºæœ¬ä¿¡æ¯ æŒ‡å‘æ•°æ®åŒ…
+			if ((ex_value = pcap_next_ex(handle, &Packet_Header, &Packet_Data)) == 1)
+			{
+				//if (retValue == 0) { continue; }
+				cout << "name: " << d->name << endl;
+				cout << "description: " << d->description << endl;
+				cout << "addresses: " << d->addresses << endl;
+				cout << "ä¾¦å¬é•¿åº¦: " << Packet_Header->len << endl;
+				//cout<<Packet_Data<<endl;
+				PrintEtherHeader(Packet_Data);
+				cout << endl;
 			}
-			
-
+			else { k--; cout << "è¶…æ—¶" << endl; }
 		}
-		
-
 	}
-	int num = i - 1;//½Ó¿Ú×ÜÊı
-
-
-	
-
-
-
-
-
-
-	//ÊÍ·ÅÉè±¸ÁĞ±í
+	int num = i - 1;//æ¥å£æ€»æ•°
+	//é‡Šæ”¾è®¾å¤‡åˆ—è¡¨
 	pcap_freealldevs(alldevs);
-
-
-
 }
