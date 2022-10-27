@@ -1,8 +1,8 @@
 ﻿#include"pcap.h"
-#include<iostream>
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WinSock2.h>
 #include <Windows.h>
+#include<iostream>
 using namespace std;
 #pragma comment(lib, "packet.lib")
 #pragma comment(lib, "wpcap.lib")
@@ -21,7 +21,7 @@ typedef struct IPHeader_t{
 	BYTE TOS;//服务类型
 	WORD TotalLen;//IP包总长度
 	WORD ID;
-	WORD Flag_Segment;
+	WORD Flag_Segment; 
 	BYTE TTL;//一个网络层的网络数据包(package)的生存周期
 	BYTE Protocol;//协议
 	WORD Checksum;//校验和
@@ -37,7 +37,6 @@ typedef struct Data_t {
 
 void PrintEtherHeader(const u_char* packetData)
 {
-	
 	struct FrameHeader_t* data;
 	data = (struct FrameHeader_t*)packetData;
 	//将一个16位数由网络字节顺序转换为主机字节顺序
@@ -51,6 +50,7 @@ void PrintEtherHeader(const u_char* packetData)
 	printf("目标MAC地址: %02X:%02X:%02X:%02X:%02X:%02X \n",
 		ether_dst[0], ether_dst[1], ether_dst[2], ether_dst[3], ether_dst[4], ether_dst[5]);
 }
+
 //void PrintIPHeader(const u_char* packetData) {
 //	struct IPHeader_t* ip_protocol;
 //
@@ -84,8 +84,6 @@ void PrintEtherHeader(const u_char* packetData)
 //	default: printf("None \n"); break;
 //	}
 //}
-
-
 int main() {
 	//接口链表数据结构
 	pcap_if_t* alldevs;
@@ -101,32 +99,26 @@ int main() {
 	//显示获取的设备列表
 	int i1 = 1;
 	for (d1 = alldevs; d1 != NULL; d1 = d1->next) {
-		cout <<  i1 ; i1++;
+		cout <<  i1 <<endl; i1++;
 		cout << "name: " << d1->name << endl;
-		//cout << "description: " << d1->description << endl;
-		//cout << "addresses: " << d1->addresses << endl;
+		cout << "description: " << d1->description << endl;
+		cout << "addresses: " << d1->addresses << endl;
 	}
-	//选择要监听的网卡
-	//cout << "请选择要监听的网卡：";
-	//int cho_i;
-	//cin >> cho_i;
 
 	int i = 1;
 	pcap_pkthdr* Packet_Header;    // 数据包头
 	const u_char* Packet_Data;
 	for (d = alldevs; d != NULL; d = d->next) {
-		
-		//cout << "next_ex: " << pcap_next_ex(d, &Packet_Header, &Packet_Data) << endl;
+
 		pcap_if_t* pname = d;
 		//打开网络接口
-		pcap_t* handle = pcap_open(pname->name, 655340,  PCAP_OPENFLAG_PROMISCUOUS,2000, 0, 0);
-		
+		pcap_t* handle = pcap_open(pname->name, 655340, PCAP_OPENFLAG_PROMISCUOUS, 1000, 0, 0);
 		//不初始化会报错
 		pcap_pkthdr* Packet_Header=NULL;    // 数据包头
 		const u_char* Packet_Data=NULL;    // 数据本身
-		int ex_value;
-
+		
 		cout << i << " :"; i++;
+		int ex_value;
 		int k = 0;
 		while (k >= 0) {
 			//pcap_open 数据包基本信息 指向数据包
@@ -139,9 +131,10 @@ int main() {
 				cout << "侦听长度: " << Packet_Header->len << endl;
 				//cout<<Packet_Data<<endl;
 				PrintEtherHeader(Packet_Data);
+				//PrintIPHeader(Packet_Data);
 				cout << endl;
 			}
-			else { k--; cout << "超时" << endl; }
+			else { k--; cout <<ex_value<< "超时" << endl; }
 		}
 	}
 	int num = i - 1;//接口总数
